@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Vizora — Data Studio</title>
+  <style>
+    :root {
+      --navy: #172235;
+      --ink: #202b3a;
+      --muted: #7c8798;
+      --line: #e9edf3;
+      --purple: #6259e8;
+      --bg: #f6f7fb;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--bg);
+      font: 14px/1.5 Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
+    }
+    button, input, select { font: inherit; }
+    button { cursor: pointer; }
+
+    .sidebar {
+      position: fixed;
+      inset: 0 auto 0 0;
+      width: 225px;
+      padding: 28px 20px;
+      color: white;
+      background: var(--navy);
+    }
+    .brand { margin-bottom: 42px; font-weight: 800; letter-spacing: .14em; }
+    .brand span { color: #8f88ff; }
+    .side-label {
+      margin: 25px 0 10px;
+      color: #8996aa;
+      font-size: 10px;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+    .nav-item {
+      display: block;
+      padding: 11px 13px;
+      margin: 5px 0;
+      color: #b5bfce;
+      border-radius: 9px;
+      text-decoration: none;
+    }
+    .nav-item.active, .nav-item:hover {
+      color: white;
+      background: #393e60;
+    }
+
+    main { margin-left: 225px; }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 17px 36px;
+      border-bottom: 1px solid var(--line);
+      background: white;
+    }
+    header span { color: var(--muted); font-size: 12px; }
+    .content { max-width: 1400px; padding: 34px 36px; margin: auto; }
+    .intro {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 20px;
+      margin-bottom: 24px;
+    }
+    .eyebrow {
+      color: var(--purple);
+      font-size: 10px;
+      font-weight: 750;
+      letter-spacing: .13em;
+    }
+    h1 { margin: 7px 0; font-size: 28px; letter-spacing: -.04em; }
+    .sub { margin: 0; color: var(--muted); }
+
+    .button {
+      padding: 10px 14px;
+      color: #566175;
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      background: white;
+      font-weight: 650;
+    }
+    .button.primary {
+      color: white;
+      border-color: var(--purple);
+      background: var(--purple);
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin-bottom: 16px;
+    }
+    .card {
+      min-width: 0;
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: white;
+      box-shadow: 0 8px 24px #1a26300a;
+    }
+    .stat-label { color: var(--muted); font-size: 11px; }
+    .stat-value { margin-top: 10px; font-size: 24px; font-weight: 750; }
+    .stat-note { margin-top: 5px; color: var(--muted); font-size: 10px; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 270px;
+      gap: 15px;
+      margin-bottom: 16px;
+    }
+    .panel-title { margin: 0; font-size: 14px; }
+    .panel-sub { margin: 4px 0 16px; color: var(--muted); font-size: 11px; }
+    .controls { display: flex; flex-wrap: wrap; gap: 8px; }
+    select {
+      max-width: 150px;
+      padding: 8px 10px;
+      color: #536073;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: white;
+    }
+    #chartSvg { display: block; width: 100%; height: 300px; }
+    .insight {
+      padding: 18px;
+      color: #555177;
+      border-radius: 10px;
+      background: #f6f5ff;
+      font-size: 12px;
+    }
+
+    .table-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+    input[type="search"] {
+      width: 190px;
+      padding: 8px 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+    }
+    .table-wrap { overflow: auto; }
+    table { width: 100%; border-collapse: collapse; white-space: nowrap; text-align: left; }
+    th, td {
+      padding: 11px 14px;
+      border-bottom: 1px solid #f0f2f5;
+      font-size: 11px;
+    }
+    th { color: var(--muted); background: #fafbfc; }
+    .hint { color: var(--muted); font-size: 10px; }
+
+    @media (max-width: 950px) {
+      .grid { grid-template-columns: 1fr; }
+      .stats { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 650px) {
+      .sidebar { display: none; }
+      main { margin-left: 0; }
+      header { padding: 14px 18px; }
+      .content { padding: 24px 16px; }
+      .intro { align-items: flex-start; flex-direction: column; }
+      h1 { font-size: 24px; }
+      .stats { gap: 9px; }
+      .stat-value { font-size: 20px; }
+      .table-head { align-items: flex-start; flex-direction: column; }
+      input[type="search"] { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="brand"><span>◆</span> VIZORA</div>
+    <div class="side-label">Workspace</div>
+    <a class="nav-item active" href="#overview">▦ &nbsp; Overview</a>
+    <a class="nav-item" href="#chart">⌁ &nbsp; Explore data</a>
+    <a class="nav-item" href="#dataset">▤ &nbsp; My dataset</a>
+    <div class="side-label">Your workspace</div>
+    <p class="hint">Upload a CSV file to explore your own data.</p>
+  </aside>
+
+  <main id="overview">
+    <header><span>Workspace / Overview</span><span>Personal workspace</span></header>
+    <div class="content">
+      <section class="intro">
+        <div>
+          <div class="eyebrow">YOUR DATA, IN FOCUS</div>
+          <h1>See the story in your data.</h1>
+          <p class="sub">Explore your numbers and spot what matters.</p>
+        </div>
+        <label class="button primary">
+          Upload CSV
+          <input id="fileInput" type="file" accept=".csv,.tsv" hidden>
+        </label>
+      </section>
+
+      <section class="stats">
+        <article class="card">
+          <div class="stat-label">Total <span class="metric">revenue</span></div>
+          <div class="stat-value" id="total">—</div>
+          <div class="stat-note">Across all records</div>
+        </article>
+        <article class="card">
+          <div class="stat-label">Average <span class="metric">revenue</span></div>
+          <div class="stat-value" id="average">—</div>
+          <div class="stat-note">Per data point</div>
+        </article>
+        <article class="card">
+          <div class="stat-label">Change over period</div>
+          <div class="stat-value" id="change">—</div>
+          <div class="stat-note">First to latest record</div>
+        </article>
+        <article class="card">
+          <div class="stat-label">Highest value</div>
+          <div class="stat-value" id="top">—</div>
+          <div class="stat-note" id="topValue">In the dataset</div>
+        </article>
+      </section>
+
+      <section class="grid">
+        <article class="card" id="chart">
+          <h2 class="panel-title" id="chartTitle">Revenue over time</h2>
+          <p class="panel-sub">Choose the fields and chart style to explore your data.</p>
+          <div class="controls">
+            <select id="xSelect" aria-label="Horizontal axis"></select>
+            <select id="ySelect" aria-label="Measure"></select>
+            <select id="chartType" aria-label="Chart type">
+              <option value="line">Line chart</option>
+              <option value="bar">Bar chart</option>
+              <option value="area">Area chart</option>
+            </select>
+          </div>
+          <svg id="chartSvg" viewBox="0 0 900 300" role="img" aria-label="Dataset chart"></svg>
+        </article>
+        <aside class="card">
+          <h2 class="panel-title">A quick insight</h2>
+          <p class="panel-sub">A little context for your numbers</p>
+          <div class="insight" id="insight">Upload a CSV or explore the sample dataset.</div>
+        </aside>
+      </section>
+
+      <section class="card" id="dataset">
+        <div class="table-head">
+          <div>
+            <h2 class="panel-title">Dataset preview</h2>
+            <span class="hint" id="tableInfo"></span>
+          </div>
+          <input id="search" type="search" placeholder="Search this dataset">
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead id="tableHead"></thead>
+            <tbody id="tableBody"></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    const sample = [
+      { Month: "Jan 2025", Revenue: 18400, Orders: 284, Visitors: 8420 },
+      { Month: "Feb 2025", Revenue: 21250, Orders: 316, Visitors: 9100 },
+      { Month: "Mar 2025", Revenue: 19800, Orders: 301, Visitors: 8870 },
+      { Month: "Apr 2025", Revenue: 24600, Orders: 358, Visitors: 10240 },
+      { Month: "May 2025", Revenue: 27300, Orders: 391, Visitors: 11210 },
+      { Month: "Jun 2025", Revenue: 25900, Orders: 377, Visitors: 10860 },
+      { Month: "Jul 2025", Revenue: 31800, Orders: 438, Visitors: 12350 },
+      { Month: "Aug 2025", Revenue: 29600, Orders: 419, Visitors: 11970 },
+      { Month: "Sep 2025", Revenue: 34200, Orders: 467, Visitors: 13420 },
+      { Month: "Oct 2025", Revenue: 36500, Orders: 492, Visitors: 14180 },
+      { Month: "Nov 2025", Revenue: 42100, Orders: 558, Visitors: 15890 },
+      { Month: "Dec 2025", Revenue: 48700, Orders: 632, Visitors: 17640 }
+    ];
+
+    let data = sample;
+    let headers = Object.keys(data[0]);
+
+    const $ = id => document.getElementById(id);
+    const escapeHtml = value => String(value).replace(/[&<>"']/g, char => ({
+      "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+    }[char]));
+
+    function numberValue(value) {
+      const parsed = Number(String(value).replace(/[$,%\s,]/g, ""));
+      return Number.isFinite(parsed) ? parsed : NaN;
+    }
+
+    function format(value) {
+      return new Intl.NumberFormat(undefined, {
+        maximumFractionDigits: 1
+      }).format(value);
+    }
+
+    function setupSelects() {
+      const xSelect = $("xSelect");
+      const ySelect = $("ySelect");
+      const oldX = xSelect.value || headers[0];
+      const oldY = ySelect.value || headers[1];
+
+      xSelect.innerHTML = headers.map(h =>
+        `<option value="${escapeHtml(h)}">${escapeHtml(h)}</option>`
+      ).join("");
+
+      const numericHeaders = headers.filter(h =>
+        data.some(row => Number.isFinite(numberValue(row[h])))
+      );
+
+      ySelect.innerHTML = numericHeaders.map(h =>
+        `<option value="${escapeHtml(h)}">${escapeHtml(h)}</option>`
+      ).join("");
+
+      xSelect.value = headers.includes(oldX) ? oldX : headers[0];
+      ySelect.value = numericHeaders.includes(oldY)
+        ? oldY
+        : (numericHeaders[0] || headers[0]);
+    }
+
+    function renderStats() {
+      const yKey = $("ySelect").value;
+      const xKey = $("xSelect").value;
+      const numbers = data.map(row => numberValue(row[yKey])).filter(Number.isFinite);
+      const total = numbers.reduce((sum, value) => sum + value, 0);
+      const average = numbers.length ? total / numbers.length : 0;
+      const first = numbers[0];
+      const last = numbers[numbers.length - 1];
+      const percentChange = first ? ((last - first) / Math.abs(first)) * 100 : null;
+      const bestRow = data.reduce((best, row) =>
+        numberValue(row[yKey]) > numberValue(best[yKey]) ? row : best
+      , data[0]);
+
+      $("total").textContent = format(total);
+      $("average").textContent = format(average);
+      $("change").textContent = percentChange === null
+        ? "—"
+        : `${percentChange > 0 ? "+" : ""}${format(percentChange)}%`;
+      $("top").textContent = bestRow ? bestRow[xKey] : "—";
+      $("topValue").textContent = bestRow ? format(numberValue(bestRow[yKey])) : "";
+      document.querySelectorAll(".metric").forEach(el => el.textContent = yKey.toLowerCase());
+      $("chartTitle").textContent = `${yKey} by ${xKey}`;
+      $("insight").textContent = percentChange === null
+        ? `${data.length} records are ready to explore.`
+        : `${yKey} is ${format(Math.abs(percentChange))}% ${
+            percentChange >= 0 ? "higher" : "lower"
+          } in the last record than the first.`;
+    }
+
+    function renderChart() {
+      const svg = $("chartSvg");
+      const xKey = $("xSelect").value;
+      const yKey = $("ySelect").value;
+      const type = $("chartType").value;
+      const values = data.map(row => numberValue(row[yKey]));
+      const valid = values.map((v, i) => Number.isFinite(v) ? i : -1)
+        .filter(i => i >= 0);
+
+      if (!valid.length) {
+        svg.innerHTML = `<text x="450" y="150" text-anchor="middle" fill="#7c8798">
+          No numeric values found for this field</text>`;
+        return;
+      }
+
+      const width = 900, height = 300;
+      const left = 60, right = 20, top = 20, bottom = 42;
+      const plotWidth = width - left - right;
+      const plotHeight = height - top - bottom;
+      const max = Math.max(...valid.map(i => values[i])) * 1.1 || 1;
+      const x = i => left + (valid.length === 1 ? plotWidth / 2 : i * plotWidth / (valid.length - 1));
+      const y = value => top + plotHeight - (value / max) * plotHeight;
+
+      let markup = "";
+      for (let i = 0; i < 5; i++) {
+        const lineY = top + i * plotHeight / 4;
+        markup += `<line x1="${left}" y1="${lineY}" x2="${width-right}" y2="${lineY}"
+          stroke="#edf0f5"/>`;
+      }
+
+      valid.forEach((index, position) => {
+        if (position % Math.ceil(valid.length / 6) === 0 || position === valid.length - 1) {
+          markup += `<text x="${x(position)}" y="${height-12}" text-anchor="middle"
+            fill="#8993a1" font-size="10">${escapeHtml(data[index][xKey])}</text>`;
+        }
+      });
+
+      if (type === "bar") {
+        const step = plotWidth / valid.length;
+        valid.forEach((index, position) => {
+          const barHeight = top + plotHeight - y(values[index]);
+          markup += `<rect x="${x(position)-step*.28}" y="${y(values[index])}"
+            width="${step*.56}" height="${barHeight}" rx="4" fill="#7068ed">
+            <title>${escapeHtml(data[index][xKey])}: ${format(values[index])}</title></rect>`;
+        });
+      } else {
+        const points = valid.map((index, position) => `${x(position)},${y(values[index])}`);
+        const path = points.map((point, i) => `${i ? "L" : "M"}${point}`).join(" ");
+        if (type === "area") {
+          markup += `<path d="${path} L ${x(valid.length-1)},${top+plotHeight}
+            L ${x(0)},${top+plotHeight} Z" fill="#7068ed" opacity=".12"/>`;
+        }
+        markup += `<path d="${path}" fill="none" stroke="#6259e8" stroke-width="3"
+          stroke-linecap="round" stroke-linejoin="round"/>`;
+        valid.forEach((index, position) => {
+          markup += `<circle cx="${x(position)}" cy="${y(values[index])}" r="4"
+            fill="white" stroke="#6259e8" stroke-width="2">
+            <title>${escapeHtml(data[index][xKey])}: ${format(values[index])}</title></circle>`;
+        });
+      }
+
+      svg.innerHTML = markup;
+    }
+
+    function renderTable() {
+      const query = $("search").value.toLowerCase();
+      const rows = data.filter(row =>
+        headers.some(key => String(row[key]).toLowerCase().includes(query))
+      );
+
+      $("tableHead").innerHTML = `<tr>${headers.map(h =>
+        `<th>${escapeHtml(h)}</th>`).join("")}</tr>`;
+
+      $("tableBody").innerHTML = rows.slice(0, 10).map(row =>
+        `<tr>${headers.map(h => `<td>${escapeHtml(row[h])}</td>`).join("")}</tr>`
+      ).join("");
+
+      $("tableInfo").textContent = `${data.length} rows · ${headers.length} columns`;
+    }
+
+    function render() {
+      setupSelects();
+      renderStats();
+      renderChart();
+      renderTable();
+    }
+
+    function parseCsv(text) {
+      const rows = [];
+      let row = [], field = "", quoted = false;
+
+      for (let i = 0; i < text.length; i++) {
+        const char = text[i];
+
+        if (quoted && char === '"' && text[i + 1] === '"') {
+          field += '"';
+          i++;
+        } else if (char === '"') {
+          quoted = !quoted;
+        } else if (!quoted && char === ",") {
+          row.push(field);
+          field = "";
+        } else if (!quoted && (char === "\n" || char === "\r")) {
+          if (char === "\r" && text[i + 1] === "\n") i++;
+          row.push(field);
+          if (row.some(value => value.trim())) rows.push(row);
+          row = [];
+          field = "";
+        } else {
+          field += char;
+        }
+      }
+
+      row.push(field);
+      if (row.some(value => value.trim())) rows.push(row);
+      return rows;
+    }
+
+    $("fileInput").addEventListener("change", event => {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = () => {
+        const rows = parseCsv(String(reader.result).replace(/^\uFEFF/, ""));
+        if (rows.length < 2) {
+          alert("Please choose a CSV with a header and at least one data row.");
+          return;
+        }
+
+        headers = rows[0].map((value, i) => value.trim() || `Column ${i + 1}`);
+        data = rows.slice(1).map(row => Object.fromEntries(
+          headers.map((header, i) => [header, (row[i] || "").trim()])
+        ));
+        render();
+      };
+      reader.readAsText(file);
+    });
+
+    ["xSelect", "ySelect", "chartType"].forEach(id =>
+      $(id).addEventListener("change", render)
+    );
+    $("search").addEventListener("input", renderTable);
+
+    render();
+  </script>
+</body>
+</html>
